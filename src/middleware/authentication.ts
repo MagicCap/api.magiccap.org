@@ -6,7 +6,7 @@ export default (req: Request, res: Response, apiToken: string | undefined): bool
         // API token is not set.
         throw new Error("API token is not set.");
     }
-    if (req.headers["Authorization"] === `Bearer ${apiToken}`) {
+    if (req.headers.authorization === `Bearer ${apiToken}`) {
         // API token is valid.
         return false;
     }
