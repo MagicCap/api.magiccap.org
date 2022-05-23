@@ -1,9 +1,12 @@
 import paramsToObject from "../utils/params_to_object";
 import processUpdateBits, { UpdateBits } from "../utils/process_update_bits";
+import { getUpdates } from "../updates";
 import { BundleBlob, CoreBlob, UpdateAPIResponse, UpdateCommit, ModuleName } from "../shared";
 import { router } from "./router";
 import { encode } from "base64-arraybuffer";
 import * as yup from "yup";
+import { Request, Response } from "express";
+import fetch from "node-fetch";
 
 const schema = yup.object().shape({
     platform: yup.string().oneOf(["linux", "darwin"]).required(),
@@ -15,10 +18,6 @@ const schema = yup.object().shape({
     core_commit: yup.string().required(),
     update_bits: yup.string().required(),
 });
-
-interface Env {
-    UPDATES: DurableObjectNamespace;
-}
 
 type UpdateCommitResult = {
     cdnUrl: string;
@@ -97,37 +96,27 @@ async function toBundleBlob(u: UpdateCommitResult | null): Promise<BundleBlob | 
     };
 }
 
-router.get("/v1/updates/poll", async (req: Request, env: Env) => {
+router.get("/v1/updates/poll", async (req: Request, res: Response): Promise<void> => {
     // Validate all of our query params.
     const searchParams = paramsToObject(req.url);
     if (!schema.isValidSync(searchParams, {strict: true, abortEarly: false})) {
-        return new Response(JSON.stringify({
+        res.status(400).json({
             type: "VALIDATOR_ERROR",
-        }), {
-            headers: {
-                "Content-Type": "application/json",
-            },
-            status: 400,
         });
+        return;
     }
 
     // Process the update bits.
     const updateBits = processUpdateBits(searchParams.update_bits);
     if (!updateBits) {
-        return new Response(JSON.stringify({
+        res.status(400).json({
             type: "UPDATE_BITS_ERROR",
-        }), {
-            headers: {
-                "Content-Type": "application/json",
-            },
-            status: 400,
         });
+        return;
     }
 
     // Get the updates. This is fine to do since this will be a GET request anyway.
-    const id = env.UPDATES.idFromName("MAIN");
-    const obj = env.UPDATES.get(id);
-    const updates = await (await obj.fetch(req)).json() as UpdateCommit[];
+    const updates = await getUpdates();
 
     // Find the updates for each module.
     const mainUpdate = findUpdateCommit(searchParams.core_commit, "main", updates, updateBits);
@@ -165,9 +154,5 @@ router.get("/v1/updates/poll", async (req: Request, env: Env) => {
         uploaders: await toBundleBlob(uploadersUpdate),
         selector: await toBundleBlob(selectorUpdate),
     };
-    return new Response(JSON.stringify(apiResult), {
-        headers: {
-            "Content-Type": "application/json",
-        },
-    });
+    res.status(200).json(apiResult);
 });

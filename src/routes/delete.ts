@@ -1,21 +1,15 @@
 import { router } from "./router";
 import authentication from "../middleware/authentication";
-import { Request as IttyRequest } from "itty-router";
+import type { Request, Response } from "express";
+import { deleteUpdate } from "../updates";
 
-interface Env {
-    UPDATES: DurableObjectNamespace;
-}
-
-router.delete("/v1/updates/delete/:commitHash", (req: IttyRequest, env: Env) => {
+router.delete("/v1/updates/delete/:commitHash", async (req: Request, res: Response): Promise<void> => {
     // Handle the authentication.
-    const res = authentication(req as Request);
-    if (res) return res;
+    const returned = authentication(req, res, process.env.API_TOKEN);
+    if (returned) return;
 
     // Perform the DELETE request.
-    const commitHash = (req.params as any).commitHash as string;
-    const url = new URL(req.url);
-    url.pathname = "/" + commitHash;
-    const id = env.UPDATES.idFromName("MAIN");
-    const obj = env.UPDATES.get(id);
-    return obj.fetch(url.toString());
+    const commitHash = req.params.commitHash;
+    await deleteUpdate(commitHash);
+    res.status(204).end();
 });

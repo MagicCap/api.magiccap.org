@@ -1,19 +1,18 @@
-declare global {
-    const API_TOKEN: string | undefined;
-};
+import type { Request, Response } from "express";
 
 // Handle privlieged authentication. Used for managing update pushes/rollbacks.
-export default (req: Request) => {
-    if (API_TOKEN === undefined) {
+export default (req: Request, res: Response, apiToken: string | undefined): boolean => {
+    if (apiToken === undefined) {
         // API token is not set.
         throw new Error("API token is not set.");
     }
-    if (req.headers.get("Authorization") === `Bearer ${API_TOKEN}`) {
+    if (req.headers["Authorization"] === `Bearer ${apiToken}`) {
         // API token is valid.
-        return;
+        return false;
     }
-    return new Response(JSON.stringify({
+    res.status(403).json({
         type: "UNAUTHORIZED",
         message: "Invalid API token. Do you have permission to push updates?",
-    }));
+    });
+    return true;
 };

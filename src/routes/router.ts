@@ -1,3 +1,3 @@
-import { Router } from "itty-router";
+import express from "express";
 
-export const router = Router();
+export const router = express();

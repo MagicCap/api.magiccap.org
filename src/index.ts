@@ -1,8 +1,5 @@
-// Load in the router.
 import { router } from "./routes";
-export default {
-    fetch: router.handle,
-};
-
-// Export all durable objects.
-export { Updates } from "./durable_objects/Updates";
+const port = process.env.PORT || 3000;
+router.listen(`0.0.0.0:${port}`, () => {
+    console.log(`Listening on port ${port}`);
+});
