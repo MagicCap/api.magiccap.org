@@ -1,6 +1,7 @@
 // Turns search params into an object.
 export default (url: string): {[key: string]: string | string[]} => {
     const o: {[key: string]: string | string[]} = {};
+    console.log(url);
     const params = new URL(url).searchParams;
     params.forEach((value, key) => {
         const a = o[key];

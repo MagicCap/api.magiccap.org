@@ -6,6 +6,7 @@ import { S3 } from "tiny-s3-uploader";
 export const getUpdates = async (): Promise<UpdateCommit[]> => {
     const url = `https://${mustEnv("S3_HOSTNAME")}/updates.json`;
     const response = await fetch(url);
+    if (response.status === 404) return [];
     return await response.json() as UpdateCommit[];
 };
 
