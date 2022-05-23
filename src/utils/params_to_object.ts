@@ -1,8 +1,7 @@
 // Turns search params into an object.
-export default (url: string): {[key: string]: string | string[]} => {
+export default (path: string): {[key: string]: string | string[]} => {
     const o: {[key: string]: string | string[]} = {};
-    console.log(url);
-    const params = new URL(url).searchParams;
+    const params = new URL(`https://api.magiccap.org${path}`).searchParams;
     params.forEach((value, key) => {
         const a = o[key];
         switch (typeof a) {
