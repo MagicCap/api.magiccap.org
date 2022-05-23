@@ -89,10 +89,10 @@ const getForm = (req: Request) => new Promise<{[key: string]: string | File}>((r
     });
 });
 
-const mustString = (contents: {[key: string]: string | File}, key: string) => {
+const mustString = async (contents: {[key: string]: string | File}, key: string) => {
     const x = contents[key];
     if (typeof x === "string") return x;
-    throw new Error(`Expected ${key} to be a string`);
+    return (await readFile(x.filepath)).toString();
 }
 
 router.post("/v1/updates/push", async (req: Request, res: Response): Promise<void> => {
@@ -134,7 +134,7 @@ router.post("/v1/updates/push", async (req: Request, res: Response): Promise<voi
     }
 
     // Get the metadata.
-    const metadata = JSON.parse(mustString(form, "metadata") as string) as PushMetadata;
+    const metadata = JSON.parse(await mustString(form, "metadata")) as PushMetadata;
 
     // Get the last update.
     const lastUpdate = (await getUpdates())[0] as UpdateCommit | undefined;
